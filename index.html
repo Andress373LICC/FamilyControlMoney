@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi Presupuesto Semanal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+<style>
+:root{--bg:#f3f5ff;--card:#fff;--tx:#1b1a3a;--mu:#6a6e94;--bd:#e3e6fb;--p:#6c5ce7;--p2:#00cec9;--ok:#00b894;--wn:#f0a500;--bad:#e55039;--sh:0 10px 30px rgba(108,92,231,.13)}
+[data-t=dark]{--bg:#11112b;--card:#1b1b3d;--tx:#f1f1ff;--mu:#9b9ec8;--bd:#2b2b57;--sh:0 10px 30px rgba(0,0,0,.45)}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--tx);transition:background .4s,color .4s;min-height:100vh}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(circle at 10% 0,rgba(108,92,231,.18),transparent 40%),radial-gradient(circle at 90% 100%,rgba(0,206,201,.16),transparent 40%)}
+header{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 18px;background:color-mix(in srgb,var(--card) 80%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd)}
+h1{font-size:1.25rem;margin:0}h2{font-size:1.05rem;margin:0 0 12px}
+.wk{display:flex;align-items:center;gap:8px;font-weight:700}
+main{max-width:1100px;margin:0 auto;padding:16px}
+nav{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px}
+nav button{white-space:nowrap;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:10px 16px;border-radius:99px;font-weight:700;cursor:pointer;transition:all .25s}
+nav button:hover{transform:translateY(-2px)}
+nav button.on{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(108,92,231,.4)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.kp{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:18px;box-shadow:var(--sh);animation:up .55s both;animation-delay:calc(var(--i,0)*70ms);transition:transform .25s}
+.card:hover{transform:translateY(-3px)}
+.kpi b{display:block;font-size:1.6rem;margin-top:4px}.kpi small{color:var(--mu)}
+.k1{border-top:5px solid var(--p)}.k2{border-top:5px solid var(--bad)}.k3{border-top:5px solid var(--ok)}.k4{border-top:5px solid var(--p2)}
+.btn{position:relative;overflow:hidden;border:0;border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--p),var(--p2));cursor:pointer;transition:transform .15s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 8px 20px rgba(108,92,231,.35)}.btn:active{transform:scale(.94)}
+.btn.g{background:var(--bd);color:var(--tx)}.btn.wa{background:#25d366}.btn.x{background:var(--bad);padding:6px 10px}
+.rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:rp .6s linear;pointer-events:none}
+input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+input:focus,select:focus,button:focus-visible{outline:3px solid color-mix(in srgb,var(--p) 50%,transparent);outline-offset:1px}
+label{font-size:.82rem;color:var(--mu);font-weight:700;display:block;margin:8px 0 4px}
+.bar{height:10px;border-radius:9px;background:var(--bd);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px;animation:w 1s cubic-bezier(.2,.8,.2,1) both}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:420px}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--bd);font-size:.92rem}th{color:var(--mu)}
+td input{max-width:110px;padding:6px 8px}
+.al{padding:12px 14px;border-radius:14px;margin:8px 0;border-left:5px solid;animation:sl .5s both;font-size:.93rem}
+.al.bad{background:color-mix(in srgb,var(--bad) 14%,transparent);border-color:var(--bad)}
+.al.warn{background:color-mix(in srgb,var(--wn) 16%,transparent);border-color:var(--wn)}
+.al.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);border-color:var(--ok)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
+.dn{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.dn svg{width:170px;flex:none}
+.lg{font-size:.85rem;display:grid;gap:4px;flex:1;min-width:130px}.lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.wb{display:flex;gap:10px;align-items:flex-end;height:150px}
+.wb div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.7rem;color:var(--mu)}
+.wb span{display:flex;gap:3px;align-items:flex-end;height:120px}
+.wb em{width:14px;border-radius:6px 6px 0 0;animation:h .9s both;transform-origin:bottom}
+.ring{position:relative;width:130px;margin:auto}.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:1.9rem}
+.empty{text-align:center;color:var(--mu);padding:26px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;display:grid;gap:8px}
+.ts{padding:12px 18px;border-radius:14px;color:#fff;font-weight:700;box-shadow:var(--sh);animation:ti .4s both}
+.ts.bad{background:var(--bad)}.ts.warn{background:var(--wn)}.ts.ok{background:var(--ok)}
+@keyframes up{from{opacity:0;transform:translateY(24px)}}
+@keyframes sl{from{opacity:0;transform:translateX(-30px)}}
+@keyframes w{from{width:0}}@keyframes h{from{transform:scaleY(0)}}
+@keyframes rp{to{transform:scale(4);opacity:0}}
+@keyframes ti{from{opacity:0;transform:translateY(30px)}}
+@keyframes gr{from{stroke-dasharray:0 100}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>💰 Mi Presupuesto</h1>
+  <div class="wk"><button class="btn g" onclick="mv(-7)" aria-label="Semana anterior">◀</button><span id="wl"></span><button class="btn g" onclick="mv(7)" aria-label="Semana siguiente">▶</button><button class="btn g" onclick="mv(0)">Hoy</button></div>
+  <div class="row" style="flex:none"><button class="btn wa" onclick="share()">📲 WhatsApp</button><button class="btn g" onclick="theme()" id="tb" aria-label="Cambiar tema">🌙</button></div>
+</header>
+<main>
+  <nav id="nav"></nav>
+  <div id="app"></div>
+</main>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,"0");
+const fmt=n=>(n||0).toLocaleString("es-MX",{style:"currency",currency:"MXN",maximumFractionDigits:0});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CATS=[
+{id:"viv",n:"Vivienda y servicios",g:"n",c:"#6c5ce7",e:"🏠",w:.4},{id:"com",n:"Comida",g:"n",c:"#00b894",e:"🍎",w:.3},
+{id:"tra",n:"Transporte",g:"n",c:"#0984e3",e:"🚌",w:.2},{id:"sal",n:"Salud",g:"n",c:"#00cec9",e:"💊",w:.1},
+{id:"oci",n:"Ocio",g:"d",c:"#fd79a8",e:"🎉",w:.4},{id:"cmp",n:"Compras",g:"d",c:"#e17055",e:"🛍️",w:.35},
+{id:"otr",n:"Otros",g:"d",c:"#f0a500",e:"📦",w:.25},{id:"aho",n:"Ahorro",g:"a",c:"#2ed573",e:"🐷",w:.6},{id:"inv",n:"Inversión",g:"a",c:"#a29bfe",e:"📈",w:.4}];
+const SPLIT={n:.5,d:.3,a:.2},GN={n:"Necesidades",d:"Deseos",a:"Ahorro e inversión"};
+let S;try{S=JSON.parse(localStorage.getItem("presu")||"null")}catch(e){}
+if(!S){S={ing:3000,bud:{},tx:[],meta:{n:"Fondo de emergencia",t:10000,s:0},inv:{ap:300,r:10,y:10}};dist()}
+function save(){try{localStorage.setItem("presu",JSON.stringify(S))}catch(e){}}
+function dist(){CATS.forEach(c=>S.bud[c.id]=Math.round(S.ing*SPLIT[c.g]*c.w))}
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const wStart=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-(x.getDay()+6)%7);return x};
+let W=wStart(new Date()),tab=0;
+const sd=d=>d.toLocaleDateString("es-MX",{day:"numeric",month:"short"});
+function calc(w){const a=iso(w),b=iso(addD(w,6)),t=S.tx.filter(x=>x.d>=a&&x.d<=b),sp={},g={n:0,d:0,a:0};let inc=0;
+ CATS.forEach(c=>sp[c.id]=0);t.forEach(x=>{if(x.t=="i")inc+=x.a;else sp[x.c]+=x.a});
+ CATS.forEach(c=>g[c.g]+=sp[c.id]);return{t,inc,sp,g,out:g.n+g.d+g.a}}
+const bg=g=>CATS.filter(c=>c.g==g).reduce((s,c)=>s+(+S.bud[c.id]||0),0);
+function elapsed(){const t=new Date();t.setHours(0,0,0,0);const d=Math.round((t-W)/864e5)+1;return d<1?0:Math.min(d,7)}
+
+/* ---------- Análisis: alertas y recomendaciones ---------- */
+function analyze(){const r=calc(W),base=r.inc||S.ing,al=[],rc=[],pc=x=>Math.round(x/base*100);
+ CATS.forEach(c=>{const b=+S.bud[c.id]||0,s=r.sp[c.id];if(!b||!s)return;const p=s/b;
+  if(p>=1)al.push({k:"bad",m:`${c.e} <b>${c.n}</b>: te pasaste por ${fmt(s-b)} (${Math.round(p*100)}% del presupuesto).`});
+  else if(p>=.8)al.push({k:"warn",m:`${c.e} <b>${c.n}</b>: llevas ${Math.round(p*100)}%. Te quedan ${fmt(b-s)}.`})});
+ if(!r.t.length)rc.push({k:"warn",m:"Aún no hay movimientos esta semana. Registra tu primer gasto o ingreso para recibir recomendaciones."});
+ else{
+  if(r.inc>0&&r.out>r.inc)rc.push({k:"bad",m:`Gastaste ${fmt(r.out-r.inc)} más de lo que ganaste. Pausa compras de deseos y revisa tus gastos más grandes.`});
+  const e=elapsed();
+  if(e>=2&&e<7&&W<=new Date()){const bn=bg("n")+bg("d"),proj=(r.g.n+r.g.d)/e*7;
+   if(bn&&proj>bn)rc.push({k:"warn",m:`A este ritmo cerrarás la semana en ${fmt(proj)} de gasto, y tu presupuesto es ${fmt(bn)}. Intenta gastar máximo ${fmt(Math.max(0,(bn-r.g.n-r.g.d)/(7-e)))} diarios.`})}
+  if(pc(r.g.n)>50)rc.push({k:"warn",m:`Tus necesidades son el ${pc(r.g.n)}% del ingreso (ideal 50%). Busca bajar servicios, renegociar o comparar precios.`});
+  if(pc(r.g.d)>30)rc.push({k:"bad",m:`Tus deseos son el ${pc(r.g.d)}% del ingreso (ideal 30%). Define un tope semanal para ocio y compras.`});
+  if(pc(r.g.a)<20)rc.push({k:"warn",m:`Ahorras e inviertes el ${pc(r.g.a)}% (meta 20%). Aparta tu ahorro el mismo día que cobras, antes de gastar.`});
+  const pr=calc(addD(W,-7));if(pr.g.n+pr.g.d>0&&r.g.n+r.g.d>(pr.g.n+pr.g.d)*1.2)rc.push({k:"warn",m:`Tus gastos subieron ${Math.round((r.g.n+r.g.d)/(pr.g.n+pr.g.d)*100-100)}% frente a la semana pasada.`});
+  const top=CATS.filter(c=>c.g!="a").sort((a,b)=>r.sp[b.id]-r.sp[a.id])[0];
+  if(top&&r.sp[top.id])rc.push({k:"ok",m:`Tu mayor gasto es ${top.e} ${top.n} (${fmt(r.sp[top.id])}). Si lo reduces 10% ahorras ${fmt(r.sp[top.id]*.1)} por semana.`});
+  if(!rc.some(x=>x.k!="ok"))rc.unshift({k:"ok",m:"¡Vas muy bien! Tu semana está dentro del plan 50/30/20. Sigue así 🎉"})}
+ const over=CATS.filter(c=>S.bud[c.id]&&r.sp[c.id]>S.bud[c.id]).length;
+ let score=100-over*12-(r.inc&&r.out>r.inc?25:0)-Math.max(0,20-pc(r.g.a))*1.2;if(!r.t.length)score=0;
+ return{r,al,rc,score:Math.max(0,Math.min(100,Math.round(score)))}}
+
+/* ---------- Vistas ---------- */
+const card=(i,h,x="")=>`<section class="card ${x}" style="--i:${i}">${h}</section>`;
+const bar=(p,c)=>`<div class="bar"><i style="width:${Math.min(100,p)}%;background:${c}"></i></div>`;
+const stCol=p=>p>=100?"var(--bad)":p>=80?"var(--wn)":"var(--ok)";
+const alHTML=a=>a.map(x=>`<div class="al ${x.k}">${x.m}</div>`).join("");
+function vResumen(){const{r,al,rc,score}=analyze(),base=r.inc||S.ing,avail=base-r.out;
+ let off=0;const tot=r.out||1,segs=CATS.filter(c=>r.sp[c.id]).map(c=>{const p=r.sp[c.id]/tot*100,s=`<circle r="15.9155" cx="21" cy="21" fill="none" stroke="${c.c}" stroke-width="6" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${25-off}" style="animation:gr 1s both"/>`;off+=p;return s}).join("");
+ const lg=CATS.filter(c=>r.sp[c.id]).map(c=>`<div><i style="background:${c.c}"></i>${c.e} ${c.n}: ${fmt(r.sp[c.id])}</div>`).join("");
+ const wk=[5,4,3,2,1,0].map(i=>calc(addD(W,-7*i)));const mx=Math.max(1,...wk.map(x=>Math.max(x.out,x.inc||S.ing)));
+ const bars=wk.map((x,i)=>`<div><span><em style="height:${(x.inc||S.ing)/mx*100}%;background:var(--p2)"></em><em style="height:${x.out/mx*100}%;background:var(--p);animation-delay:.1s"></em></span>${sd(addD(W,-7*(5-i)))}</div>`).join("");
+ const sc=score>=75?"var(--ok)":score>=45?"var(--wn)":"var(--bad)";
+ return`<div class="kp">
+ ${card(0,`<div class="kpi"><small>💵 Ingreso ${r.inc?"real":"plan"}</small><b data-n="${base}">0</b></div>`,"k1")}
+ ${card(1,`<div class="kpi"><small>🧾 Gastos</small><b data-n="${r.g.n+r.g.d}">0</b></div>`,"k2")}
+ ${card(2,`<div class="kpi"><small>🐷 Ahorro e inversión</small><b data-n="${r.g.a}">0</b></div>`,"k3")}
+ ${card(3,`<div class="kpi"><small>✅ Disponible</small><b data-n="${avail}" style="color:${avail<0?"var(--bad)":"var(--ok)"}">0</b></div>`,"k4")}</div>
+ <div class="grid">
+ ${card(4,`<h2>Salud financiera</h2><div class="ring"><svg viewBox="0 0 42 42"><circle r="15.9155" cx="21" cy="21" fill="none" stroke="var(--bd)" stroke-width="4"/><circle r="15.9155" cx="21" cy="21" fill="none" stroke="${sc}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${score} ${100-score}" stroke-dashoffset="25" style="animation:gr 1.2s both"/></svg><b>${score}</b></div><p class="empty">${r.t.length?score>=75?"Excelente control":score>=45?"Puedes mejorar":"Necesita atención":"Sin datos todavía"}</p>`)}
+ ${card(5,`<h2>¿A dónde se va tu dinero?</h2>${r.out?`<div class="dn"><svg viewBox="0 0 42 42"><circle r="15.9155" cx="21" cy="21" fill="none" stroke="var(--bd)" stroke-width="6"/>${segs}</svg><div class="lg">${lg}</div></div>`:`<div class="empty">Registra gastos para ver tu gráfica 📊</div>`}`)}
+ ${card(6,`<h2>Últimas 6 semanas</h2><div class="wb">${bars}</div><div class="lg" style="display:flex;gap:14px;margin-top:8px"><span><i style="background:var(--p2)"></i>Ingreso</span><span><i style="background:var(--p)"></i>Salidas</span></div>`)}
+ ${card(7,`<h2>🔔 Alertas</h2>${al.length?alHTML(al):`<div class="al ok">Sin alertas. Todo bajo control.</div>`}`)}
+ ${card(8,`<h2>💡 Recomendaciones</h2>${alHTML(rc)}`,"")}
+ </div>`}
+
+function vMov(){const r=calc(W),t=[...r.t].sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
+ const opts=`<option value="_i">💵 Ingreso</option>`+CATS.map(c=>`<option value="${c.id}">${c.e} ${c.n}</option>`).join("");
+ const rows=t.map(x=>{const c=CATS.find(k=>k.id==x.c);return`<tr><td>${x.d.slice(5)}</td><td>${x.t=="i"?"💵 Ingreso":c.e+" "+c.n}</td><td>${esc(x.n||"")}</td><td style="color:${x.t=="i"?"var(--ok)":"var(--tx)"};font-weight:700">${x.t=="i"?"+":"-"}${fmt(x.a)}</td><td><button class="btn x" onclick="del(${x.id})" aria-label="Borrar">✕</button></td></tr>`}).join("");
+ return`<div class="grid">${card(0,`<h2>➕ Nuevo movimiento</h2><label>Tipo / categoría</label><select id="fc">${opts}</select><label>Monto ($)</label><input id="fm" type="number" min="0" step="any" inputmode="decimal" placeholder="0"><label>Fecha</label><input id="fd" type="date" value="${iso(new Date())}"><label>Nota (opcional)</label><input id="fn" maxlength="40" placeholder="Ej. tacos con amigos"><br><button class="btn" style="width:100%;margin-top:10px" onclick="add()">Guardar movimiento</button>`)}
+ ${card(1,`<h2>Movimientos de la semana</h2>${rows?`<div class="tw"><table><tr><th>Día</th><th>Categoría</th><th>Nota</th><th>Monto</th><th></th></tr>${rows}</table></div>`:`<div class="empty">Sin movimientos. Agrega el primero 👈</div>`}`)}</div>`}
+
+function vPres(){const r=calc(W),rows=CATS.map(c=>{const b=+S.bud[c.id]||0,s=r.sp[c.id],p=b?s/b*100:(s?100:0);
+  return`<tr><td>${c.e} ${c.n}</td><td><input type="number" min="0" value="${b}" onchange="setB('${c.id}',this.value)" aria-label="Presupuesto ${c.n}"></td><td>${fmt(s)}</td><td style="min-width:110px">${bar(p,stCol(p))}<small style="color:var(--mu)">${b-s>=0?"Quedan "+fmt(b-s):"Exceso "+fmt(s-b)}</small></td></tr>`}).join("");
+ const gs=["n","d","a"].map(g=>{const t=bg(g),p=S.ing?Math.round(t/S.ing*100):0;return`<div style="margin:10px 0"><b>${GN[g]}</b> — ${fmt(t)} (${p}% · ideal ${SPLIT[g]*100}%)${bar(p/SPLIT[g]/100*100,g=="a"?"var(--ok)":"var(--p)")}</div>`}).join("");
+ return`<div class="grid">${card(0,`<h2>🎯 Plan semanal</h2><label>Ingreso semanal esperado ($)</label><input type="number" min="0" value="${S.ing}" onchange="S.ing=+this.value||0;save();render()"><br><button class="btn" style="width:100%;margin:12px 0" onclick="dist();save();render();toast('Presupuesto 50/30/20 aplicado','ok')">✨ Repartir automáticamente (50/30/20)</button>${gs}<p style="color:var(--mu);font-size:.85rem">50% necesidades · 30% deseos · 20% ahorro e inversión.</p>`)}
+ ${card(1,`<h2>Presupuesto por categoría</h2><div class="tw"><table><tr><th>Categoría</th><th>Presupuesto</th><th>Gastado</th><th>Avance</th></tr>${rows}</table></div>`)}</div>`}
+
+function vMeta(){const m=S.meta,p=m.t?m.s/m.t*100:0,i=S.inv,rt=i.r/100/52,n=i.y*52,fv=rt?i.ap*((Math.pow(1+rt,n)-1)/rt):i.ap*n,put=i.ap*n;
+ const pts=[];for(let y=0;y<=i.y;y++){const k=y*52,v=rt?i.ap*((Math.pow(1+rt,k)-1)/rt):i.ap*k;pts.push(v)}
+ const mx=Math.max(1,...pts),line=pts.map((v,k)=>`${k/Math.max(1,i.y)*300},${90-v/mx*85}`).join(" ");
+ return`<div class="grid">${card(0,`<h2>🎯 Meta de ahorro</h2><label>Nombre</label><input value="${esc(m.n)}" onchange="S.meta.n=this.value;save();render()"><label>Monto objetivo ($)</label><input type="number" min="1" value="${m.t}" onchange="S.meta.t=+this.value||1;save();render()"><div style="margin:14px 0"><b>${fmt(m.s)}</b> de ${fmt(m.t)} (${Math.round(p)}%)${bar(p,"var(--ok)")}</div>${m.s>=m.t?`<div class="al ok">🎉 ¡Meta lograda!</div>`:`<small style="color:var(--mu)">Con ${fmt(bg("a"))} semanales de ahorro la logras en ~${bg("a")?Math.ceil((m.t-m.s)/bg("a")):"∞"} semanas.</small>`}<label>Abonar ahora ($)</label><div class="row"><input id="ab" type="number" min="0" placeholder="0"><button class="btn" style="flex:none" onclick="abono()">Abonar</button></div>`)}
+ ${card(1,`<h2>📈 Simulador de inversión</h2><div class="row"><div><label>Aporte semanal</label><input type="number" min="0" value="${i.ap}" onchange="S.inv.ap=+this.value||0;save();render()"></div><div><label>Rendimiento anual %</label><input type="number" min="0" step="0.5" value="${i.r}" onchange="S.inv.r=+this.value||0;save();render()"></div><div><label>Años</label><input type="number" min="1" max="40" value="${i.y}" onchange="S.inv.y=Math.min(40,+this.value||1);save();render()"></div></div>
+ <svg viewBox="0 0 300 95" style="width:100%;margin-top:12px"><polyline points="${line} 300,95 0,95" fill="color-mix(in srgb,var(--p) 25%,transparent)" stroke="none"/><polyline points="${line}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linecap="round"/></svg>
+ <div class="kp" style="margin:0"><div><small>Tú aportas</small><br><b>${fmt(put)}</b></div><div><small>Tendrías</small><br><b style="color:var(--ok)">${fmt(fv)}</b></div></div><p style="color:var(--mu);font-size:.8rem">Simulación estimada con interés compuesto. No es una promesa de rendimiento; invertir implica riesgo.</p>`)}
+ ${card(2,`<h2>⚙️ Datos</h2><button class="btn g" onclick="if(confirm('¿Borrar TODOS tus datos?')){localStorage.removeItem('presu');location.reload()}">🗑️ Borrar todos mis datos</button><p style="color:var(--mu);font-size:.85rem">Tu información se guarda solo en este navegador. Nadie más puede verla.</p>`)}</div>`}
+
+/* ---------- Acciones ---------- */
+const TABS=["📊 Resumen","🧾 Movimientos","🎯 Presupuesto","🏦 Metas e inversión"],V=[vResumen,vMov,vPres,vMeta];
+function render(){$("#wl").textContent=`${sd(W)} – ${sd(addD(W,6))}`;
+ $("#nav").innerHTML=TABS.map((t,i)=>`<button class="${i==tab?"on":""}" onclick="tab=${i};render()">${t}</button>`).join("");
+ $("#app").innerHTML=V[tab]();
+ document.querySelectorAll("[data-n]").forEach(el=>{const to=+el.dataset.n,t0=performance.now();(function f(t){const k=Math.min(1,(t-t0)/800);el.textContent=fmt(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(t0)})}
+function mv(n){W=n?addD(W,n):wStart(new Date());render()}
+function toast(m,k="ok"){const e=document.createElement("div");e.className="ts "+k;e.textContent=m;$("#toast").append(e);setTimeout(()=>e.remove(),3500)}
+function add(){const c=$("#fc").value,a=parseFloat($("#fm").value),d=$("#fd").value;
+ if(!(a>0)||!d){toast("Escribe un monto y una fecha válidos","warn");return}
+ S.tx.push({id:Date.now(),t:c=="_i"?"i":"g",c:c=="_i"?"":c,a,d,n:$("#fn").value.trim()});save();
+ W=wStart(new Date(d+"T00:00:00"));render();
+ if(c=="_i"){toast("Ingreso guardado 💵","ok");return}
+ const cat=CATS.find(x=>x.id==c),s=calc(W).sp[c],b=+S.bud[c]||0;
+ if(b&&s>b)toast(`🚨 Te pasaste en ${cat.n} por ${fmt(s-b)}`,"bad");else if(b&&s>=b*.8)toast(`⚠️ Llevas ${Math.round(s/b*100)}% en ${cat.n}`,"warn");else toast("Gasto guardado ✅","ok")}
+function del(id){S.tx=S.tx.filter(x=>x.id!=id);save();render();toast("Movimiento eliminado","warn")}
+function setB(id,v){S.bud[id]=Math.max(0,+v||0);save();render()}
+function abono(){const a=parseFloat($("#ab").value);if(!(a>0)){toast("Escribe un monto","warn");return}
+ S.meta.s+=a;S.tx.push({id:Date.now(),t:"g",c:"aho",a,d:iso(new Date()),n:"Abono: "+S.meta.n});save();render();toast("¡Abono registrado! 🐷","ok")}
+function share(){const{r}=analyze(),base=r.inc||S.ing;
+ const L=CATS.map(c=>{const b=+S.bud[c.id]||0,s=r.sp[c.id];if(!b&&!s)return"";const p=b?s/b:1;return`${p>=1?"🚨":p>=.8?"⚠️":"✅"} ${c.e} ${c.n}: ${fmt(s)} / ${fmt(b)}`}).filter(Boolean).join("\n");
+ const txt=`💰 *Mi presupuesto semanal*\n📅 ${sd(W)} – ${sd(addD(W,6))}\n\n💵 Ingreso: ${fmt(base)}\n🧾 Gastos: ${fmt(r.g.n+r.g.d)}\n🐷 Ahorro e inversión: ${fmt(r.g.a)}\n✅ Disponible: ${fmt(base-r.out)}\n\n*Por categoría*\n${L}`;
+ window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}
+function theme(){const d=document.documentElement,n=d.dataset.t=="dark"?"light":"dark";d.dataset.t=n;$("#tb").textContent=n=="dark"?"☀️":"🌙";try{localStorage.setItem("presu-t",n)}catch(e){}}
+document.addEventListener("click",e=>{const b=e.target.closest(".btn");if(!b)return;const r=b.getBoundingClientRect(),s=document.createElement("span"),z=Math.max(r.width,r.height);
+ s.className="rip";s.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;b.append(s);setTimeout(()=>s.remove(),600)});
+(function(){let t;try{t=localStorage.getItem("presu-t")}catch(e){}t=t||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.dataset.t=t;$("#tb").textContent=t=="dark"?"☀️":"🌙"})();
+render();
+</script>
+</body>
+</html>

@@ -53,6 +53,10 @@ td input{max-width:110px;padding:6px 8px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;display:grid;gap:8px}
 .ts{padding:12px 18px;border-radius:14px;color:#fff;font-weight:700;box-shadow:var(--sh);animation:ti .4s both}
 .ts.bad{background:var(--bad)}.ts.warn{background:var(--wn)}.ts.ok{background:var(--ok)}
+[data-a=load] header,[data-a=load] main,[data-a=load] #login,[data-a=out] header,[data-a=out] main,[data-a=in] #login{display:none}
+#login{max-width:380px;margin:8vh auto;padding:16px}.lt{font-size:2.6rem;text-align:center}
+.ms{color:var(--bad);font-size:.88rem;min-height:1.2em;margin:8px 0}.ms.ok{color:var(--ok)}
+.lk{background:none;border:0;color:var(--p);cursor:pointer;font:inherit;font-size:.85rem;padding:6px 0}
 @keyframes up{from{opacity:0;transform:translateY(24px)}}
 @keyframes sl{from{opacity:0;transform:translateX(-30px)}}
 @keyframes w{from{width:0}}@keyframes h{from{transform:scaleY(0)}}
@@ -61,12 +65,23 @@ td input{max-width:110px;padding:6px 8px}
 @keyframes gr{from{stroke-dasharray:0 100}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
-<body>
+<body data-a="load">
+<div id="login"><section class="card"><div class="lt">💰</div><h2 style="text-align:center">Mi Presupuesto</h2>
+<label for="le">Correo</label><input id="le" type="email" autocomplete="email">
+<label for="lp">Contraseña (mínimo 6 caracteres)</label><input id="lp" type="password" autocomplete="current-password">
+<div id="lm" class="ms"></div>
+<button class="btn" style="width:100%" onclick="lg(0)">Iniciar sesión</button>
+<button class="btn g" style="width:100%;margin-top:8px" onclick="lg(1)">Crear cuenta nueva</button>
+<button class="btn g" style="width:100%;margin-top:8px" onclick="gg()">Continuar con Google</button>
+<div style="text-align:center"><button class="lk" onclick="rs()">Olvidé mi contraseña</button></div></section></div>
 <header>
   <h1>💰 Mi Presupuesto</h1>
   <div class="wk"><button class="btn g" onclick="mv(-7)" aria-label="Semana anterior">◀</button><span id="wl"></span><button class="btn g" onclick="mv(7)" aria-label="Semana siguiente">▶</button><button class="btn g" onclick="mv(0)">Hoy</button></div>
-  <div class="row" style="flex:none"><button class="btn wa" onclick="share()">📲 WhatsApp</button><button class="btn g" onclick="theme()" id="tb" aria-label="Cambiar tema">🌙</button></div>
+  <div class="row" style="flex:none"><button class="btn wa" onclick="share()">📲 WhatsApp</button><button class="btn g" onclick="theme()" id="tb" aria-label="Cambiar tema">🌙</button><button class="btn g" onclick="out()" aria-label="Cerrar sesión">🚪</button></div>
 </header>
 <main>
   <nav id="nav"></nav>
@@ -83,9 +98,13 @@ const CATS=[
 {id:"oci",n:"Ocio",g:"d",c:"#fd79a8",e:"🎉",w:.4},{id:"cmp",n:"Compras",g:"d",c:"#e17055",e:"🛍️",w:.35},
 {id:"otr",n:"Otros",g:"d",c:"#f0a500",e:"📦",w:.25},{id:"aho",n:"Ahorro",g:"a",c:"#2ed573",e:"🐷",w:.6},{id:"inv",n:"Inversión",g:"a",c:"#a29bfe",e:"📈",w:.4}];
 const SPLIT={n:.5,d:.3,a:.2},GN={n:"Necesidades",d:"Deseos",a:"Ahorro e inversión"};
-let S;try{S=JSON.parse(localStorage.getItem("presu")||"null")}catch(e){}
-if(!S){S={ing:3000,bud:{},tx:[],meta:{n:"Fondo de emergencia",t:10000,s:0},inv:{ap:300,r:10,y:10}};dist()}
-function save(){try{localStorage.setItem("presu",JSON.stringify(S))}catch(e){}}
+/* ====== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ====== */
+const FB={apiKey:"PEGA_AQUI",authDomain:"PEGA_AQUI",projectId:"PEGA_AQUI",appId:"PEGA_AQUI"};
+/* ==================================================== */
+const OK=!FB.apiKey.startsWith("PEGA");
+function defS(){const s={ing:0,bud:{},tx:[],metas:[],inv:{ap:0,r:0,y:1}};CATS.forEach(c=>s.bud[c.id]=0);return s}
+let S=defS(),U=null,auth,db,unsub,st;
+function save(){if(!U)return;clearTimeout(st);st=setTimeout(()=>db.collection("users").doc(U.uid).set(JSON.parse(JSON.stringify(S))).catch(()=>toast("No se pudo guardar. Revisa tu conexión","bad")),400)}
 function dist(){CATS.forEach(c=>S.bud[c.id]=Math.round(S.ing*SPLIT[c.g]*c.w))}
 const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
@@ -99,10 +118,11 @@ const bg=g=>CATS.filter(c=>c.g==g).reduce((s,c)=>s+(+S.bud[c.id]||0),0);
 function elapsed(){const t=new Date();t.setHours(0,0,0,0);const d=Math.round((t-W)/864e5)+1;return d<1?0:Math.min(d,7)}
 
 /* ---------- Análisis: alertas y recomendaciones ---------- */
-function analyze(){const r=calc(W),base=r.inc||S.ing,al=[],rc=[],pc=x=>Math.round(x/base*100);
+function analyze(){const r=calc(W),base=r.inc||S.ing,al=[],rc=[],pc=x=>base?Math.round(x/base*100):0;
  CATS.forEach(c=>{const b=+S.bud[c.id]||0,s=r.sp[c.id];if(!b||!s)return;const p=s/b;
   if(p>=1)al.push({k:"bad",m:`${c.e} <b>${c.n}</b>: te pasaste por ${fmt(s-b)} (${Math.round(p*100)}% del presupuesto).`});
   else if(p>=.8)al.push({k:"warn",m:`${c.e} <b>${c.n}</b>: llevas ${Math.round(p*100)}%. Te quedan ${fmt(b-s)}.`})});
+ if(!base)rc.push({k:"warn",m:"Define tu ingreso semanal en 🎯 Presupuesto para recibir recomendaciones completas."});
  if(!r.t.length)rc.push({k:"warn",m:"Aún no hay movimientos esta semana. Registra tu primer gasto o ingreso para recibir recomendaciones."});
  else{
   if(r.inc>0&&r.out>r.inc)rc.push({k:"bad",m:`Gastaste ${fmt(r.out-r.inc)} más de lo que ganaste. Pausa compras de deseos y revisa tus gastos más grandes.`});
@@ -111,7 +131,7 @@ function analyze(){const r=calc(W),base=r.inc||S.ing,al=[],rc=[],pc=x=>Math.roun
    if(bn&&proj>bn)rc.push({k:"warn",m:`A este ritmo cerrarás la semana en ${fmt(proj)} de gasto, y tu presupuesto es ${fmt(bn)}. Intenta gastar máximo ${fmt(Math.max(0,(bn-r.g.n-r.g.d)/(7-e)))} diarios.`})}
   if(pc(r.g.n)>50)rc.push({k:"warn",m:`Tus necesidades son el ${pc(r.g.n)}% del ingreso (ideal 50%). Busca bajar servicios, renegociar o comparar precios.`});
   if(pc(r.g.d)>30)rc.push({k:"bad",m:`Tus deseos son el ${pc(r.g.d)}% del ingreso (ideal 30%). Define un tope semanal para ocio y compras.`});
-  if(pc(r.g.a)<20)rc.push({k:"warn",m:`Ahorras e inviertes el ${pc(r.g.a)}% (meta 20%). Aparta tu ahorro el mismo día que cobras, antes de gastar.`});
+  if(base&&pc(r.g.a)<20)rc.push({k:"warn",m:`Ahorras e inviertes el ${pc(r.g.a)}% (meta 20%). Aparta tu ahorro el mismo día que cobras, antes de gastar.`});
   const pr=calc(addD(W,-7));if(pr.g.n+pr.g.d>0&&r.g.n+r.g.d>(pr.g.n+pr.g.d)*1.2)rc.push({k:"warn",m:`Tus gastos subieron ${Math.round((r.g.n+r.g.d)/(pr.g.n+pr.g.d)*100-100)}% frente a la semana pasada.`});
   const top=CATS.filter(c=>c.g!="a").sort((a,b)=>r.sp[b.id]-r.sp[a.id])[0];
   if(top&&r.sp[top.id])rc.push({k:"ok",m:`Tu mayor gasto es ${top.e} ${top.n} (${fmt(r.sp[top.id])}). Si lo reduces 10% ahorras ${fmt(r.sp[top.id]*.1)} por semana.`});
@@ -153,17 +173,19 @@ function vMov(){const r=calc(W),t=[...r.t].sort((a,b)=>b.d.localeCompare(a.d)||b
 function vPres(){const r=calc(W),rows=CATS.map(c=>{const b=+S.bud[c.id]||0,s=r.sp[c.id],p=b?s/b*100:(s?100:0);
   return`<tr><td>${c.e} ${c.n}</td><td><input type="number" min="0" value="${b}" onchange="setB('${c.id}',this.value)" aria-label="Presupuesto ${c.n}"></td><td>${fmt(s)}</td><td style="min-width:110px">${bar(p,stCol(p))}<small style="color:var(--mu)">${b-s>=0?"Quedan "+fmt(b-s):"Exceso "+fmt(s-b)}</small></td></tr>`}).join("");
  const gs=["n","d","a"].map(g=>{const t=bg(g),p=S.ing?Math.round(t/S.ing*100):0;return`<div style="margin:10px 0"><b>${GN[g]}</b> — ${fmt(t)} (${p}% · ideal ${SPLIT[g]*100}%)${bar(p/SPLIT[g]/100*100,g=="a"?"var(--ok)":"var(--p)")}</div>`}).join("");
- return`<div class="grid">${card(0,`<h2>🎯 Plan semanal</h2><label>Ingreso semanal esperado ($)</label><input type="number" min="0" value="${S.ing}" onchange="S.ing=+this.value||0;save();render()"><br><button class="btn" style="width:100%;margin:12px 0" onclick="dist();save();render();toast('Presupuesto 50/30/20 aplicado','ok')">✨ Repartir automáticamente (50/30/20)</button>${gs}<p style="color:var(--mu);font-size:.85rem">50% necesidades · 30% deseos · 20% ahorro e inversión.</p>`)}
+ return`<div class="grid">${card(0,`<h2>🎯 Plan semanal</h2><label>Ingreso semanal esperado ($)</label><input type="number" min="0" value="${S.ing}" onchange="setIng(this.value)"><br><button class="btn" style="width:100%;margin:12px 0" onclick="dist();save();render();toast('Presupuesto 50/30/20 aplicado','ok')">✨ Repartir automáticamente (50/30/20)</button>${gs}<p style="color:var(--mu);font-size:.85rem">50% necesidades · 30% deseos · 20% ahorro e inversión.</p>`)}
  ${card(1,`<h2>Presupuesto por categoría</h2><div class="tw"><table><tr><th>Categoría</th><th>Presupuesto</th><th>Gastado</th><th>Avance</th></tr>${rows}</table></div>`)}</div>`}
 
-function vMeta(){const m=S.meta,p=m.t?m.s/m.t*100:0,i=S.inv,rt=i.r/100/52,n=i.y*52,fv=rt?i.ap*((Math.pow(1+rt,n)-1)/rt):i.ap*n,put=i.ap*n;
- const pts=[];for(let y=0;y<=i.y;y++){const k=y*52,v=rt?i.ap*((Math.pow(1+rt,k)-1)/rt):i.ap*k;pts.push(v)}
+function vMeta(){const i=S.inv,rt=i.r/100/52,n=i.y*52,fv=rt?i.ap*((Math.pow(1+rt,n)-1)/rt):i.ap*n,put=i.ap*n,w=bg("a");
+ const pts=[];for(let y=0;y<=i.y;y++){const k=y*52;pts.push(rt?i.ap*((Math.pow(1+rt,k)-1)/rt):i.ap*k)}
  const mx=Math.max(1,...pts),line=pts.map((v,k)=>`${k/Math.max(1,i.y)*300},${90-v/mx*85}`).join(" ");
- return`<div class="grid">${card(0,`<h2>🎯 Meta de ahorro</h2><label>Nombre</label><input value="${esc(m.n)}" onchange="S.meta.n=this.value;save();render()"><label>Monto objetivo ($)</label><input type="number" min="1" value="${m.t}" onchange="S.meta.t=+this.value||1;save();render()"><div style="margin:14px 0"><b>${fmt(m.s)}</b> de ${fmt(m.t)} (${Math.round(p)}%)${bar(p,"var(--ok)")}</div>${m.s>=m.t?`<div class="al ok">🎉 ¡Meta lograda!</div>`:`<small style="color:var(--mu)">Con ${fmt(bg("a"))} semanales de ahorro la logras en ~${bg("a")?Math.ceil((m.t-m.s)/bg("a")):"∞"} semanas.</small>`}<label>Abonar ahora ($)</label><div class="row"><input id="ab" type="number" min="0" placeholder="0"><button class="btn" style="flex:none" onclick="abono()">Abonar</button></div>`)}
- ${card(1,`<h2>📈 Simulador de inversión</h2><div class="row"><div><label>Aporte semanal</label><input type="number" min="0" value="${i.ap}" onchange="S.inv.ap=+this.value||0;save();render()"></div><div><label>Rendimiento anual %</label><input type="number" min="0" step="0.5" value="${i.r}" onchange="S.inv.r=+this.value||0;save();render()"></div><div><label>Años</label><input type="number" min="1" max="40" value="${i.y}" onchange="S.inv.y=Math.min(40,+this.value||1);save();render()"></div></div>
+ const ms=S.metas.map((m,k)=>{const p=m.t?m.s/m.t*100:0;return card(k+1,`<div class="row"><h2 style="margin:0;flex:3">🎯 ${esc(m.n)}</h2><button class="btn x" style="flex:none" onclick="delMeta(${m.id})">🗑️ Borrar</button></div><div style="margin:14px 0"><b>${fmt(m.s)}</b> de ${fmt(m.t)} (${Math.round(p)}%)${bar(p,"var(--ok)")}</div>${m.s>=m.t?`<div class="al ok">🎉 ¡Meta lograda!</div>`:`<small style="color:var(--mu)">${w?`Con ${fmt(w)} semanales de ahorro la logras en ~${Math.ceil((m.t-m.s)/w)} semanas.`:"Define tu presupuesto de ahorro para estimar el tiempo."}</small>`}<label>Abonar ahora ($)</label><div class="row"><input id="ab${m.id}" type="number" min="0" placeholder="0"><button class="btn" style="flex:none" onclick="abono(${m.id})">Abonar</button></div>`)}).join("");
+ return`<div class="grid">${card(0,`<h2>➕ Nueva meta de ahorro</h2><label>Nombre</label><input id="mn" maxlength="40" placeholder="Ej. Viaje, laptop, fondo de emergencia"><label>Monto objetivo ($)</label><input id="mt" type="number" min="1" placeholder="0"><br><button class="btn" style="width:100%;margin-top:10px" onclick="addMeta()">Crear meta</button>`)}
+ ${ms||card(1,`<div class="empty">Aún no tienes metas. Crea la primera 👈</div>`)}
+ ${card(S.metas.length+2,`<h2>📈 Simulador de inversión</h2><div class="row"><div><label>Aporte semanal</label><input type="number" min="0" value="${i.ap}" onchange="S.inv.ap=+this.value||0;save();render()"></div><div><label>Rendimiento anual %</label><input type="number" min="0" step="0.5" value="${i.r}" onchange="S.inv.r=+this.value||0;save();render()"></div><div><label>Años</label><input type="number" min="1" max="40" value="${i.y}" onchange="S.inv.y=Math.max(1,Math.min(40,+this.value||1));save();render()"></div></div>
  <svg viewBox="0 0 300 95" style="width:100%;margin-top:12px"><polyline points="${line} 300,95 0,95" fill="color-mix(in srgb,var(--p) 25%,transparent)" stroke="none"/><polyline points="${line}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linecap="round"/></svg>
  <div class="kp" style="margin:0"><div><small>Tú aportas</small><br><b>${fmt(put)}</b></div><div><small>Tendrías</small><br><b style="color:var(--ok)">${fmt(fv)}</b></div></div><p style="color:var(--mu);font-size:.8rem">Simulación estimada con interés compuesto. No es una promesa de rendimiento; invertir implica riesgo.</p>`)}
- ${card(2,`<h2>⚙️ Datos</h2><button class="btn g" onclick="if(confirm('¿Borrar TODOS tus datos?')){localStorage.removeItem('presu');location.reload()}">🗑️ Borrar todos mis datos</button><p style="color:var(--mu);font-size:.85rem">Tu información se guarda solo en este navegador. Nadie más puede verla.</p>`)}</div>`}
+ ${card(S.metas.length+3,`<h2>⚙️ Mi cuenta</h2><p style="color:var(--mu);font-size:.85rem">Sesión: ${esc(U?U.email:"")}<br>Tus datos se guardan en tu cuenta y se sincronizan en todos tus dispositivos.</p><button class="btn g" onclick="if(confirm('¿Borrar TODOS tus datos? No se puede deshacer.')){S=defS();save();render();toast('Datos borrados','warn')}">🗑️ Borrar todos mis datos</button>`)}</div>`}
 
 /* ---------- Acciones ---------- */
 const TABS=["📊 Resumen","🧾 Movimientos","🎯 Presupuesto","🏦 Metas e inversión"],V=[vResumen,vMov,vPres,vMeta];
@@ -182,8 +204,19 @@ function add(){const c=$("#fc").value,a=parseFloat($("#fm").value),d=$("#fd").va
  if(b&&s>b)toast(`🚨 Te pasaste en ${cat.n} por ${fmt(s-b)}`,"bad");else if(b&&s>=b*.8)toast(`⚠️ Llevas ${Math.round(s/b*100)}% en ${cat.n}`,"warn");else toast("Gasto guardado ✅","ok")}
 function del(id){S.tx=S.tx.filter(x=>x.id!=id);save();render();toast("Movimiento eliminado","warn")}
 function setB(id,v){S.bud[id]=Math.max(0,+v||0);save();render()}
-function abono(){const a=parseFloat($("#ab").value);if(!(a>0)){toast("Escribe un monto","warn");return}
- S.meta.s+=a;S.tx.push({id:Date.now(),t:"g",c:"aho",a,d:iso(new Date()),n:"Abono: "+S.meta.n});save();render();toast("¡Abono registrado! 🐷","ok")}
+function abono(id){const m=S.metas.find(x=>x.id==id),a=parseFloat($("#ab"+id).value);if(!m||!(a>0)){toast("Escribe un monto","warn");return}
+ m.s+=a;S.tx.push({id:Date.now(),t:"g",c:"aho",a,d:iso(new Date()),n:"Abono: "+m.n});save();render();toast("¡Abono registrado! 🐷","ok")}
+function addMeta(){const n=$("#mn").value.trim(),t=parseFloat($("#mt").value);if(!n||!(t>0)){toast("Escribe un nombre y un monto objetivo","warn");return}
+ S.metas.push({id:Date.now(),n,t,s:0});save();render();toast("Meta creada 🎯","ok")}
+function delMeta(id){const m=S.metas.find(x=>x.id==id);if(m&&confirm(`¿Borrar la meta "${m.n}"?`)){S.metas=S.metas.filter(x=>x.id!=id);save();render();toast("Meta borrada","warn")}}
+function setIng(v){S.ing=Math.max(0,+v||0);if(!Object.values(S.bud).some(x=>x>0))dist();save();render()}
+const EM={"auth/invalid-email":"El correo no es válido.","auth/user-not-found":"No existe una cuenta con ese correo.","auth/wrong-password":"Contraseña incorrecta.","auth/invalid-credential":"Correo o contraseña incorrectos.","auth/email-already-in-use":"Ese correo ya tiene cuenta. Inicia sesión.","auth/weak-password":"La contraseña debe tener al menos 6 caracteres.","auth/network-request-failed":"Sin conexión. Revisa tu internet.","auth/too-many-requests":"Demasiados intentos. Espera un momento.","auth/unauthorized-domain":"Agrega este dominio en Firebase → Authentication → Settings → Authorized domains."};
+function lerr(m,ok){const e=$("#lm");e.textContent=m;e.className="ms"+(ok?" ok":"")}
+function lg(c){if(!OK){lerr("Falta pegar la configuración de Firebase en el código.");return}const e=$("#le").value.trim(),p=$("#lp").value;if(!e||!p){lerr("Escribe tu correo y contraseña");return}
+ (c?auth.createUserWithEmailAndPassword(e,p):auth.signInWithEmailAndPassword(e,p)).catch(x=>lerr(EM[x.code]||"No se pudo entrar. Intenta de nuevo."))}
+function gg(){if(!OK){lerr("Falta pegar la configuración de Firebase en el código.");return}auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(x=>lerr(EM[x.code]||"No se pudo entrar con Google."))}
+function rs(){const e=$("#le").value.trim();if(!OK||!e){lerr("Escribe tu correo arriba y vuelve a presionar.");return}auth.sendPasswordResetEmail(e).then(()=>lerr("Te enviamos un correo para restablecer tu contraseña.",1)).catch(x=>lerr(EM[x.code]||"No se pudo enviar el correo."))}
+function out(){if(confirm("¿Cerrar sesión?"))auth.signOut()}
 function share(){const{r}=analyze(),base=r.inc||S.ing;
  const L=CATS.map(c=>{const b=+S.bud[c.id]||0,s=r.sp[c.id];if(!b&&!s)return"";const p=b?s/b:1;return`${p>=1?"🚨":p>=.8?"⚠️":"✅"} ${c.e} ${c.n}: ${fmt(s)} / ${fmt(b)}`}).filter(Boolean).join("\n");
  const txt=`💰 *Mi presupuesto semanal*\n📅 ${sd(W)} – ${sd(addD(W,6))}\n\n💵 Ingreso: ${fmt(base)}\n🧾 Gastos: ${fmt(r.g.n+r.g.d)}\n🐷 Ahorro e inversión: ${fmt(r.g.a)}\n✅ Disponible: ${fmt(base-r.out)}\n\n*Por categoría*\n${L}`;
@@ -192,7 +225,12 @@ function theme(){const d=document.documentElement,n=d.dataset.t=="dark"?"light":
 document.addEventListener("click",e=>{const b=e.target.closest(".btn");if(!b)return;const r=b.getBoundingClientRect(),s=document.createElement("span"),z=Math.max(r.width,r.height);
  s.className="rip";s.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;b.append(s);setTimeout(()=>s.remove(),600)});
 (function(){let t;try{t=localStorage.getItem("presu-t")}catch(e){}t=t||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.dataset.t=t;$("#tb").textContent=t=="dark"?"☀️":"🌙"})();
-render();
+if(OK){firebase.initializeApp(FB);auth=firebase.auth();db=firebase.firestore();
+ auth.onAuthStateChanged(u=>{if(unsub){unsub();unsub=null}U=u;
+  if(!u){S=defS();document.body.dataset.a="out";return}
+  unsub=db.collection("users").doc(u.uid).onSnapshot(d=>{if(d.metadata.hasPendingWrites)return;const n=Object.assign(defS(),d.data()||{});
+   if(document.body.dataset.a=="in"&&JSON.stringify(n)==JSON.stringify(S))return;S=n;document.body.dataset.a="in";render()},()=>toast("No se pudieron cargar tus datos. Revisa las reglas de Firestore.","bad"))})}
+else{document.body.dataset.a="out";lerr("⚠️ Falta pegar la configuración de Firebase en el código.")}
 </script>
 </body>
 </html>

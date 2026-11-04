@@ -204,7 +204,7 @@ function sim(e,x){const d=S.debts.filter(q=>q.b>0).map(q=>({n:q.n,b:q.b,r:q.r/12
   if(e!="m")a.sort(e=="av"?(u,v)=>v.r-u.r:(u,v)=>u.b-v.b).forEach(q=>{if(p>0&&q.b>0){const k=Math.min(p,q.b);q.b-=k;p-=k}});
   a.forEach(q=>{if(q.b<=.005&&!q.f){q.f=mo;q.b=0;fin.push({n:q.n,mo})}})}
  return{mo,int,fin,bad:mo>=600}}
-function vDeudas(){const D=S.debts,act=D.filter(q=>q.b>0),tot=act.reduce((s,q)=>s+q.b,0),mins=act.reduce((s,q)=>s+q.m,0),ints=act.reduce((s,q)=>s+q.b*q.r/1200,0),plan=mins+S.dx,wk=Math.round(plan*12/52);
+function vDeudas(){const D=S.debts,act=D.filter(q=>q.b>0),tot=act.reduce((s,q)=>s+q.b,0),mins=act.reduce((s,q)=>s+q.m,0),ints=act.reduce((s,q)=>s+q.b*q.r/1200,0),plan=mins+S.dx,wk=Math.round(plan/4);
  const mp=S.tx.filter(x=>x.c=="deu"&&x.d.slice(0,7)==iso(new Date()).slice(0,7)).reduce((s,x)=>s+x.a,0);
  const A=sim("av",S.dx),B=sim("bn",S.dx),M=sim("m",0),cur=S.est=="av"?A:B,en=S.est=="av"?"avalancha":"bola de nieve";
  const col=(t,k,r)=>`<div style="flex:1;min-width:140px;padding:12px;border-radius:14px;border:2px solid ${k&&S.est==k?"var(--p)":"var(--bd)"}"><b>${t}</b><br>${!r?"—":r.bad?"No se liquida con estos pagos":`⏱️ ${r.mo} meses<br>💸 Intereses: ${fmt(r.int)}<br>📅 ${fd(r.mo)}<br>🎉 1ª deuda libre: mes ${r.fin[0].mo}`}</div>`;
@@ -262,7 +262,7 @@ function setD(id,k,v){const q=S.debts.find(x=>x.id==id);if(!q)return;q[k]=Math.m
 function delD(id){const q=S.debts.find(x=>x.id==id);if(q&&confirm(`¿Borrar la deuda "${q.n}"? Tus pagos ya registrados se conservan.`)){S.debts=S.debts.filter(x=>x.id!=id);save();render();toast("Deuda borrada","warn")}}
 function setDx(v){S.dx=Math.max(0,+v||0);save();render()}
 function setEst(e){S.est=e;save();render()}
-function applyDB(){const p=S.debts.filter(q=>q.b>0).reduce((s,q)=>s+q.m,0)+S.dx;S.bud.deu=Math.round(p*12/52);save();render();toast("Presupuesto semanal de Deudas actualizado","ok")}
+function applyDB(){const p=S.debts.filter(q=>q.b>0).reduce((s,q)=>s+q.m,0)+S.dx;S.bud.deu=Math.round(p/4);save();render();toast("Presupuesto semanal de Deudas actualizado","ok")}
 function setIng(v){S.ing=Math.max(0,+v||0);if(!Object.values(S.bud).some(x=>x>0))dist();save();render()}
 const EM={"auth/invalid-email":"El correo no es válido.","auth/user-not-found":"No existe una cuenta con ese correo.","auth/wrong-password":"Contraseña incorrecta.","auth/invalid-credential":"Correo o contraseña incorrectos.","auth/email-already-in-use":"Ese correo ya tiene cuenta. Inicia sesión.","auth/weak-password":"La contraseña debe tener al menos 6 caracteres.","auth/network-request-failed":"Sin conexión. Revisa tu internet.","auth/too-many-requests":"Demasiados intentos. Espera un momento.","auth/unauthorized-domain":"Agrega este dominio en Firebase → Authentication → Settings → Authorized domains."};
 function lerr(m,ok){const e=$("#lm");e.textContent=m;e.className="ms"+(ok?" ok":"")}
